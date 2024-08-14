@@ -1,11 +1,11 @@
 use std::{io, num::ParseIntError};
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ParamMode {
     Positional,
     Immediate,
 }
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Opcode {
     Sum = 1,
     Multiply = 2,
@@ -47,7 +47,7 @@ impl TryFrom<u8> for Opcode {
     }
 }
 
-pub fn parse_instruction(instruction: i32) -> (Opcode, [ParamMode; 3]) {
+pub(crate) fn parse_instruction(instruction: i32) -> (Opcode, [ParamMode; 3]) {
     let instruction_str = format!("{:05}", instruction);
     let opcode: Opcode =
         Opcode::try_from(instruction_str[3..].to_string().parse::<u8>().unwrap()).unwrap();
@@ -60,7 +60,21 @@ pub fn parse_instruction(instruction: i32) -> (Opcode, [ParamMode; 3]) {
     (opcode, [param1, param2, param3])
 }
 
-fn user_input() -> Result<i32, ParseIntError> {
+pub(crate) fn get_param(vec: &Vec<i32>, index: usize, param_mode: ParamMode) -> i32 {
+    match param_mode {
+        ParamMode::Positional => { vec[vec[index] as usize] }
+        ParamMode::Immediate => { vec[index] }
+    }
+}
+pub(crate) fn get_mut_param(vec: &mut Vec<i32>, index: usize, param_mode: ParamMode) -> &mut i32 {
+    let pos_index = vec[index] as usize;
+    match param_mode {
+        ParamMode::Positional => { &mut vec[pos_index] }
+        ParamMode::Immediate => { &mut vec[index] }
+    }
+}
+
+pub(crate) fn user_input() -> Result<i32, ParseIntError> {
     let mut input = String::new();
     io::stdin()
         .read_line(&mut input)
@@ -72,78 +86,39 @@ pub fn computer_ver2(mut vec: Vec<i32>) -> i32 {
     let mut instruction_pointer = 0;
     let mut result = 0;
     loop {
-        println!("{:?}", vec[instruction_pointer]);
         let (opcode, param_modes) = parse_instruction(vec[instruction_pointer]);
-        
 
-        //println!("{}", instruction_pointer);
-        //println!("{:?}", opcode);
-        //println!("{:?}", param_modes);
         match opcode {
             Opcode::Sum => {
-                let param1 = match param_modes[0] {
-                    ParamMode::Positional => vec[vec[instruction_pointer + 1].clone() as usize],
-                    ParamMode::Immediate => vec[instruction_pointer + 1],
-                };
-                let param2 = match param_modes[1] {
-                    ParamMode::Positional => vec[vec[instruction_pointer + 2].clone() as usize],
-                    ParamMode::Immediate => vec[instruction_pointer + 2],
-                };
-                let par3_index = vec[instruction_pointer + 3].clone() as usize;
-                let param3 = match param_modes[2] {
-                    ParamMode::Positional => &mut vec[par3_index],
-                    ParamMode::Immediate => &mut vec[instruction_pointer + 3],
-                };
+                let param1 = get_param(&vec, instruction_pointer + 1, param_modes[0]);
+                let param2 = get_param(&vec, instruction_pointer + 2, param_modes[1]);
+                let param3 = get_mut_param(&mut vec, instruction_pointer + 3, param_modes[2]);
                 *param3 = param1 + param2;
                 instruction_pointer += 4;
             }
             Opcode::Multiply => {
-                let param1 = match param_modes[0] {
-                    ParamMode::Positional => vec[vec[instruction_pointer + 1].clone() as usize],
-                    ParamMode::Immediate => vec[instruction_pointer + 1],
-                };
-                let param2 = match param_modes[1] {
-                    ParamMode::Positional => vec[vec[instruction_pointer + 2].clone() as usize],
-                    ParamMode::Immediate => vec[instruction_pointer + 2],
-                };
-                let par3_index = vec[instruction_pointer + 3].clone() as usize;
-                let param3 = match param_modes[2] {
-                    ParamMode::Positional => &mut vec[par3_index],
-                    ParamMode::Immediate => &mut vec[instruction_pointer + 3],
-                };
+                let param1 = get_param(&vec, instruction_pointer + 1, param_modes[0]);
+                let param2 = get_param(&vec, instruction_pointer + 2, param_modes[1]);
+                let param3 = get_mut_param(&mut vec, instruction_pointer + 3, param_modes[2]);
                 *param3 = param1 * param2;
                 instruction_pointer += 4;
             }
             Opcode::Input => {
-                let par1_index = vec[instruction_pointer + 1].clone() as usize;
-                let param1 = match param_modes[0] {
-                    ParamMode::Positional => &mut vec[par1_index],
-                    ParamMode::Immediate => &mut vec[instruction_pointer + 1],
-                };
+                let param1 = get_mut_param(&mut vec, instruction_pointer + 1, param_modes[0]);
+
                 println!("Please enter an input instruction: ");
                 *param1 = user_input().unwrap();
                 instruction_pointer += 2;
             }
             Opcode::Output => {
-                let par1_index = vec[instruction_pointer + 1].clone() as usize;
-                let param1 = match param_modes[0] {
-                    ParamMode::Positional => vec[par1_index],
-                    ParamMode::Immediate => vec[instruction_pointer + 1],
-                };
-
+                let param1 = get_param(&vec, instruction_pointer + 1, param_modes[0]);
                 result = param1;
                 println!("OUTPUT: {}", result);
                 instruction_pointer += 2;
             }
             Opcode::JumpIfTrue => {
-                let param1 = match param_modes[0] {
-                    ParamMode::Positional => vec[vec[instruction_pointer + 1].clone() as usize],
-                    ParamMode::Immediate => vec[instruction_pointer + 1],
-                };
-                let param2 = match param_modes[1] {
-                    ParamMode::Positional => vec[vec[instruction_pointer + 2].clone() as usize],
-                    ParamMode::Immediate => vec[instruction_pointer + 2],
-                };
+                let param1 = get_param(&vec, instruction_pointer + 1, param_modes[0]);
+                let param2 = get_param(&vec, instruction_pointer + 2, param_modes[1]);
                 if param1 != 0 {
                     instruction_pointer = param2 as usize
                 } else {
@@ -151,14 +126,8 @@ pub fn computer_ver2(mut vec: Vec<i32>) -> i32 {
                 }
             }
             Opcode::JumpIfFalse => {
-                let param1 = match param_modes[0] {
-                    ParamMode::Positional => vec[vec[instruction_pointer + 1].clone() as usize],
-                    ParamMode::Immediate => vec[instruction_pointer + 1],
-                };
-                let param2 = match param_modes[1] {
-                    ParamMode::Positional => vec[vec[instruction_pointer + 2].clone() as usize],
-                    ParamMode::Immediate => vec[instruction_pointer + 2],
-                };
+                let param1 = get_param(&vec, instruction_pointer + 1, param_modes[0]);
+                let param2 = get_param(&vec, instruction_pointer + 2, param_modes[1]);
                 if param1 == 0 {
                     instruction_pointer = param2 as usize
                 } else {
@@ -166,19 +135,9 @@ pub fn computer_ver2(mut vec: Vec<i32>) -> i32 {
                 }
             }
             Opcode::LessThan => {
-                let param1 = match param_modes[0] {
-                    ParamMode::Positional => vec[vec[instruction_pointer + 1].clone() as usize],
-                    ParamMode::Immediate => vec[instruction_pointer + 1],
-                };
-                let param2 = match param_modes[1] {
-                    ParamMode::Positional => vec[vec[instruction_pointer + 2].clone() as usize],
-                    ParamMode::Immediate => vec[instruction_pointer + 2],
-                };
-                let par3_index = vec[instruction_pointer + 3].clone() as usize;
-                let param3 = match param_modes[2] {
-                    ParamMode::Positional => &mut vec[par3_index],
-                    ParamMode::Immediate => &mut vec[instruction_pointer + 3],
-                };
+                let param1 = get_param(&vec, instruction_pointer + 1, param_modes[0]);
+                let param2 = get_param(&vec, instruction_pointer + 2, param_modes[1]);
+                let param3 = get_mut_param(&mut vec, instruction_pointer + 3, param_modes[2]);
                 if param1 < param2 {
                     *param3 = 1;
                 } else {
@@ -188,19 +147,9 @@ pub fn computer_ver2(mut vec: Vec<i32>) -> i32 {
             }
 
             Opcode::Equals => {
-                let param1 = match param_modes[0] {
-                    ParamMode::Positional => vec[vec[instruction_pointer + 1].clone() as usize],
-                    ParamMode::Immediate => vec[instruction_pointer + 1],
-                };
-                let param2 = match param_modes[1] {
-                    ParamMode::Positional => vec[vec[instruction_pointer + 2].clone() as usize],
-                    ParamMode::Immediate => vec[instruction_pointer + 2],
-                };
-                let par3_index = vec[instruction_pointer + 3].clone() as usize;
-                let param3 = match param_modes[2] {
-                    ParamMode::Positional => &mut vec[par3_index],
-                    ParamMode::Immediate => &mut vec[instruction_pointer + 3],
-                };
+                let param1 = get_param(&vec, instruction_pointer + 1, param_modes[0]);
+                let param2 = get_param(&vec, instruction_pointer + 2, param_modes[1]);
+                let param3 = get_mut_param(&mut vec, instruction_pointer + 3, param_modes[2]);
 
                 if param1 == param2 {
                     *param3 = 1;
@@ -217,49 +166,28 @@ pub fn computer_ver2(mut vec: Vec<i32>) -> i32 {
     result
 }
 
-fn computer(mut vec: Vec<u32>) -> Vec<u32> {
-    let mut index = 0;
 
-    loop {
-        match vec[index] {
-            1 => {
-                //println!("Inside Add");
-                let i1 = vec[index + 1] as usize;
-                let i2 = vec[index + 2] as usize;
-                let i3 = vec[index + 3] as usize;
-                vec[i3] = vec[i1] + vec[i2];
-            }
-            2 => {
-                //println!("Inside Mult");
-                let i1 = vec[index + 1] as usize;
-                let i2 = vec[index + 2] as usize;
-                let i3 = vec[index + 3] as usize;
-                vec[i3] = vec[i1] * vec[i2];
-            }
-            99 => {
-                //println!("Inside Stop");
-                break;
-            }
-            _ => {
-                eprintln!("Unmatched opcode!");
-            }
-        };
-        index += 4;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn create_vec() -> Vec<i32> {
+        vec![1, 2, 3, 4, 5, 6, 7, 8]
     }
-    vec
-}
 
-fn pair_computer(vec: Vec<u32>, result: u32) -> Result<(u32, u32), String> {
-    for i in 0..=99 {
-        for j in 0..=99 {
-            let mut vec_clone = vec.clone();
-            vec_clone[1] = i;
-            vec_clone[2] = j;
-            let res = computer(vec_clone)[0];
-            if res == result {
-                return Ok((i, j));
-            };
-        }
+    #[test]
+    fn param_separation() {
+        let mut input_vec = create_vec();
+
+        assert_eq!(get_param(&input_vec, 1, ParamMode::Immediate), 2);
     }
-    Err("No pairs satisfy the result".to_string())
+    #[test]
+    fn mut_param_separation() {
+        let mut input_vec = create_vec();
+        let ptr = &mut input_vec[1];
+        let num = get_mut_param(&mut input_vec, 1, ParamMode::Immediate);
+        *num = 99;
+        assert_eq!(input_vec[1], 99);
+
+        println!("{:?}", input_vec)
+    }
 }
