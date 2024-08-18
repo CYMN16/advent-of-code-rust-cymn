@@ -1,7 +1,10 @@
-#![allow(unused_mut, unused_variables, dead_code)]
+#![allow(unused_mut, unused_variables, dead_code, unused_imports)]
 
 use std::fs;
+use crate::day10::{destroy_asteroids, find_best_location};
 use crate::day7::{threaded_feedback_loop_phase_combinations, try_phase_combinations};
+use crate::day8::{assemble_image, find_smallest0_mult1_2};
+use crate::day9::run_computer;
 // use crate::day6::{count_orbits, find_number_of_jumps, insert_orbits_to_hashmap, parse_pairs};
 //use day1::{fuel_req, fuel_req_recursive};
 //use day2::{computer, pair_computer};
@@ -16,6 +19,9 @@ mod day4;
 mod day5;
 mod day6;
 mod day7;
+mod day8;
+mod day9;
+mod day10;
 
 fn main() {
     /*
@@ -149,7 +155,6 @@ fn main() {
     println!("number of connections: {}", count_orbits(orbit_map.clone()));
 
     println!("number of jumps for SAN to YOU: {}", find_number_of_jumps(&orbit_map, "COM".to_string(), "SAN".to_string(), "YOU".to_string()))
-    */
     println!("Day - 7");
 
 
@@ -170,4 +175,47 @@ fn main() {
     println!("{}", try_phase_combinations(inputs_vec.clone(), set.clone()));
     let set = vec![5, 6, 7, 8, 9];
     println!("{}", threaded_feedback_loop_phase_combinations(inputs_vec.clone(), set));
+
+    println!("Day - 8");
+
+    let inputs = fs::read("./inputs/day8").unwrap();
+    let input_str = String::from_utf8(inputs).unwrap();
+
+    println!("{}",find_smallest0_mult1_2(&input_str, 25, 6));
+    println!("{:?}",assemble_image(input_str.clone(), 25, 6));
+
+
+    println!("Day - 9");
+    let inputs = fs::read("./inputs/day9").unwrap();
+    let mut inputs_vec: Vec<i64> = String::from_utf8(inputs)
+        .unwrap()
+        .split_terminator(&[',', '\n'][..])
+        .map(|item| {
+            if !item.is_empty() {
+                item.parse::<i64>().unwrap()
+            } else {
+                0
+            }
+        })
+        .collect();
+
+    println!("result: {:?}", run_computer(inputs_vec.clone(), 1));
+    println!("result: {:?}", run_computer(inputs_vec.clone(), 2));
+
+     */
+
+    println!("Day - 10");
+    let inputs = fs::read("./inputs/day10").unwrap();
+    let input_str: Vec<Vec<char>> = String::from_utf8(inputs).unwrap().split('\n').map(|item| {
+        if !item.is_empty() {
+            item.trim().chars().collect()
+        } else {
+            "".chars().collect()
+        }
+    }).collect();
+
+    let ((i,j), max_asteroids) = find_best_location(input_str.clone());
+    println!("{:?}", ((i, j), max_asteroids));
+
+    destroy_asteroids(input_str, (i,j));
 }
