@@ -2,9 +2,11 @@
 
 use std::fs;
 use crate::day10::{destroy_asteroids, find_best_location};
+use crate::day12::{calculate_repeating_index, calculate_repetition_period, calculate_total_energy, full_steps_energy_period};
+use crate::day14::{Inventory, RecipeBook};
 use crate::day7::{threaded_feedback_loop_phase_combinations, try_phase_combinations};
 use crate::day8::{assemble_image, find_smallest0_mult1_2};
-use crate::day9::run_computer;
+// use crate::day9::run_computer;
 // use crate::day6::{count_orbits, find_number_of_jumps, insert_orbits_to_hashmap, parse_pairs};
 //use day1::{fuel_req, fuel_req_recursive};
 //use day2::{computer, pair_computer};
@@ -22,6 +24,10 @@ mod day7;
 mod day8;
 mod day9;
 mod day10;
+mod day11;
+mod day12;
+mod day13;
+mod day14;
 
 fn main() {
     /*
@@ -202,7 +208,6 @@ fn main() {
     println!("result: {:?}", run_computer(inputs_vec.clone(), 1));
     println!("result: {:?}", run_computer(inputs_vec.clone(), 2));
 
-     */
 
     println!("Day - 10");
     let inputs = fs::read("./inputs/day10").unwrap();
@@ -218,4 +223,71 @@ fn main() {
     println!("{:?}", ((i, j), max_asteroids));
 
     destroy_asteroids(input_str, (i,j));
+
+    println!("Day - 11");
+    let inputs = fs::read("./inputs/day11").unwrap();
+    let mut inputs_vec: Vec<i64> = String::from_utf8(inputs)
+        .unwrap()
+        .split_terminator(&[',', '\n'][..])
+        .map(|item| {
+            if !item.is_empty() {
+                item.parse::<i64>().unwrap()
+            } else {
+                0
+            }
+        })
+        .collect();
+    day11::run_computer(inputs_vec);
+    println!("Day - 12");
+    let inputs = fs::read("./inputs/day12").unwrap();
+
+    let binding = String::from_utf8(inputs)
+        .unwrap();
+    let mut inputs_vec: Vec<&str> = binding
+        .split_terminator("\r\n")
+        .map(|item| {
+            if !item.is_empty() {
+                item
+            } else {
+                ""
+            }
+        })
+        .collect();
+    println!("{:?}", calculate_total_energy(inputs_vec.clone(), 1000));
+    println!("{:?}", calculate_repetition_period(inputs_vec, 1000000));
+    println!("Day - 13");
+    let inputs = fs::read("./inputs/day13").unwrap();
+    let mut inputs_vec: Vec<i64> = String::from_utf8(inputs)
+        .unwrap()
+        .split_terminator(&[',', '\n'][..])
+        .map(|item| {
+            if !item.is_empty() {
+                item.parse::<i64>().unwrap()
+            } else {
+                0
+            }
+        })
+        .collect();
+    // day13::run_computer(inputs_vec);
+    day13::run_computer_with_ruscii(inputs_vec);
+
+     */
+
+    println!("Day - 14");
+    let inputs = fs::read("./inputs/day14").unwrap();
+
+    let binding = String::from_utf8(inputs).unwrap();
+    let recipe_book = RecipeBook::new(binding.as_str());
+    let mut inventory = Inventory::new(recipe_book);
+    // inventory.request_item("FUEL", 10);
+    
+    // let cost_per_fuel = inventory.get_used_ore();
+    // println!("{:?}", cost_per_fuel);
+    let trillion: i64 = 1_000_000_000_000;
+    // inventory.craft_until_n("FUEL", trillion);
+    println!("max fuel: {}", inventory.craft_until_n("FUEL", trillion));
+    println!("{:?}", inventory.get_unused_ingredients());
+    // println!("max craftable fuel: {}", inventory.get_max_fuel_craftable(trillion));
+    
+
 }
